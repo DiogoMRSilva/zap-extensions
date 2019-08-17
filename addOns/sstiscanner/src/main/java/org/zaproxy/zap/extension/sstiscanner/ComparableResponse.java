@@ -218,8 +218,8 @@ public class ComparableResponse {
         float nRelevantKeywordsR1 = 0;
         float nRelevantKeywordsR2 = 0;
         for (String keyword : RELEVANT_KEYWORDS) {
-            if (keyword.toLowerCase().equals(response1.getValueSent())
-                    || keyword.toLowerCase().equals(response2.getValueSent())) {
+            if (keyword.equalsIgnoreCase(response1.getValueSent())
+                    || keyword.equalsIgnoreCase(response2.getValueSent())) {
                 continue;
             }
             nRelevantKeywordsR1 +=
@@ -260,12 +260,12 @@ public class ComparableResponse {
         // so we need to remove the payload2 from the body to know the ones that are independent
         if (req2Value.contains(req1Value)) bodyResp2 = bodyResp2.replace(req2Value, "");
         int nReflectionsPayload1in2 = StringUtils.countMatches(bodyResp2, req1Value);
-        if (escapeHtml(req1Value) != req1Value)
+        if (!escapeHtml(req1Value).equals(req1Value))
             nReflectionsPayload1in2 += StringUtils.countMatches(bodyResp2, escapeHtml(req1Value));
 
         if (req1Value.contains(req2Value)) bodyResp1 = bodyResp1.replace(req1Value, "");
         int nReflectionsPayload2in1 = StringUtils.countMatches(bodyResp1, req2Value);
-        if (escapeHtml(req2Value) != req2Value)
+        if (!escapeHtml(req2Value).equals(req2Value))
             nReflectionsPayload2in1 += StringUtils.countMatches(bodyResp1, escapeHtml(req2Value));
 
         float nNonPersistentReflectionsPayload1 =
@@ -381,7 +381,7 @@ public class ComparableResponse {
 
                 int numberOfCommonPaths = 0;
                 for (String path : response1paths.keySet()) {
-                    if (response1paths.get(path) == response2paths.get(path)) {
+                    if (response1paths.get(path).equals(response2paths.get(path))) {
                         numberOfCommonPaths += response1paths.get(path);
                     }
                 }
