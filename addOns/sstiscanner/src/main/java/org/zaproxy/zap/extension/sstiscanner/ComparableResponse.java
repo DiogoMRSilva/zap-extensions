@@ -21,7 +21,13 @@ package org.zaproxy.zap.extension.sstiscanner;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import net.htmlparser.jericho.Element;
 import net.htmlparser.jericho.Source;
 import net.sf.json.JSONArray;
@@ -35,7 +41,7 @@ import org.parosproxy.paros.network.HttpMessage;
  *
  * @author DiogoMRSilva (2018). Credits: the heuristics used to compare 2 responses are the same as
  *     the ones Backslash Powered Scanner by James Kettle, but the implementation and its usage is
- *     independent.
+ *     independent. https://github.com/PortSwigger/backslash-powered-scanner
  */
 public class ComparableResponse {
 
@@ -407,7 +413,7 @@ public class ComparableResponse {
         }
     }
 
-    /** @return all The Possible Pats */
+    /** @return all The Possible Paths */
     public HashMap<String, Integer> getAllPaths() {
         synchronized (this) {
             if (allPaths == null) {

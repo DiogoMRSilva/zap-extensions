@@ -19,9 +19,7 @@ zapAddOn {
         }
         dependencies {
             addOns {
-                register("ascanrules") {
-                    semVer.set("34")
-                }
+                register("ascanrules")
             }
         }
     }

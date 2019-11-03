@@ -27,7 +27,7 @@ import org.parosproxy.paros.network.HttpSender;
 /**
  * Representation of a location where a given input is reflected after being sent in other location.
  * This can be used to get the state of the sink and store information about it. The main
- * information stored is the response to the original response and the response to a reference
+ * information stored is the response to the original request and the response to a reference
  * request. This information may be useful to compare with the current state of the sink.
  *
  * @author DiogoMRSilva (2018)

@@ -19,21 +19,20 @@
  */
 package org.zaproxy.zap.extension.sstiscanner;
 
-/**
- * This represents the code that is necessary to execute an arithmetic operation in Golang template
- * engine and the expected result of the operation.
- *
- * @author DiogoMRSilva (2018)
- */
-public class SSTIUtils extends TemplateFormat {
+import java.security.SecureRandom;
 
-    public SSTIUtils() {
-        super("{", "}", "{{print \"%d\" \"%d\"}}");
-    }
+/** @author DiogoMRSilva (2018) */
+public class SSTIUtils {
 
-    @Override
-    public int getExpectedResult(int number1, int number2) {
-        String concatenated = String.format("%d%d", number1, number2);
-        return Integer.parseInt(concatenated);
+    /** from XXE plugin(yhawke) */
+    public static String randomStringFromAlphabet(String alphabet, int length) {
+        SecureRandom rand = new SecureRandom();
+        StringBuilder result = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            result.append(alphabet.charAt(rand.nextInt(alphabet.length())));
+        }
+
+        return result.toString();
     }
 }

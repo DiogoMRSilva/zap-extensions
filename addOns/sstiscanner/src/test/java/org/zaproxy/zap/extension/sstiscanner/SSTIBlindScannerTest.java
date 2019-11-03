@@ -51,7 +51,6 @@ public class SSTIBlindScannerTest extends ActiveScannerTestUtils<SSTIBlindScanne
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test
@@ -66,7 +65,6 @@ public class SSTIBlindScannerTest extends ActiveScannerTestUtils<SSTIBlindScanne
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test
@@ -81,6 +79,5 @@ public class SSTIBlindScannerTest extends ActiveScannerTestUtils<SSTIBlindScanne
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 }

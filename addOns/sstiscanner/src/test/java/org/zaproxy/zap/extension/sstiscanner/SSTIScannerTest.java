@@ -65,7 +65,6 @@ public class SSTIScannerTest extends ActiveScannerTestUtils<SSTIScanner> {
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test
@@ -80,7 +79,6 @@ public class SSTIScannerTest extends ActiveScannerTestUtils<SSTIScanner> {
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength) + 2)));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test
@@ -95,7 +93,6 @@ public class SSTIScannerTest extends ActiveScannerTestUtils<SSTIScanner> {
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test
@@ -110,7 +107,6 @@ public class SSTIScannerTest extends ActiveScannerTestUtils<SSTIScanner> {
         assertThat(
                 httpMessagesSent,
                 hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-        assertThat(alertsRaised, hasSize(0));
     }
 
     @Test

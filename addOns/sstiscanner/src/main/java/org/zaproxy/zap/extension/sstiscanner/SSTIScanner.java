@@ -21,7 +21,6 @@ package org.zaproxy.zap.extension.sstiscanner;
 
 import java.io.IOException;
 import java.net.SocketException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +32,6 @@ import org.parosproxy.paros.core.scanner.Category;
 import org.parosproxy.paros.core.scanner.Plugin;
 import org.parosproxy.paros.network.HttpMessage;
 import org.zaproxy.zap.extension.ascanrules.PersistentXSSUtils;
-import org.zaproxy.zap.model.TechSet;
 
 /**
  * Active Plugin for Server Side Template Injection testing and verification.
@@ -56,7 +54,7 @@ public class SSTIScanner extends AbstractAppParamPlugin {
     // the first and last tag are the commentaries from twig
     // "\\\"\\<th\\:t\\=\\$\\{zj\\}\\#\\foreach"
 
-    private static final TemplateFormat[] template_formats = {
+    private static final TemplateFormat[] TEMPLATE_FORMATS = {
         new TemplateFormat(" ", " "),
         new TemplateFormat("{", "}"),
         new TemplateFormat("${", "}"),
@@ -65,7 +63,7 @@ public class SSTIScanner extends AbstractAppParamPlugin {
         new TemplateFormat("{@", "}"),
         new TemplateFormat("{{", "}}"),
         new TemplateFormat("{{=", "}}"),
-        new TemplateFormat("<%%=", "%%>"),
+        new TemplateFormat("<%=", "%>"),
         new TemplateFormat("#set($x=", ")${x}"),
         new TemplateFormat("<p th:text=\"${", "}\"></p>"),
         new TemplateFormat(
@@ -74,10 +72,10 @@ public class SSTIScanner extends AbstractAppParamPlugin {
         new goTemplateFormat()
     };
 
-    private static final String[] ways_to_fix_code_syntax = {"\"", "'", "1", ""};
+    private static final String[] WAYS_TO_FIX_CODE_SYNTAX = {"\"", "'", "1", ""};
 
     // Logger instance
-    private static final Logger log = Logger.getLogger(SSTIScanner.class);
+    private static final Logger LOG = Logger.getLogger(SSTIScanner.class);
 
     /**
      * Get the unique identifier of this plugin
@@ -111,11 +109,6 @@ public class SSTIScanner extends AbstractAppParamPlugin {
         // return new String[] {"TestPersistentXSSSpider"};
     }
 
-    @Override
-    public boolean targets(TechSet technologies) {
-        return true;
-    }
-
     /**
      * Get the description of the vulnerability when found
      *
@@ -128,7 +121,7 @@ public class SSTIScanner extends AbstractAppParamPlugin {
 
     /**
      * Give back the categorization of the vulnerability checked by this plugin (it's an injection
-     * category for CODEi)
+     * category for CODE)
      *
      * @return a category from the Category enum list
      */
@@ -189,10 +182,7 @@ public class SSTIScanner extends AbstractAppParamPlugin {
 
     /** Initialize the plugin according to the overall environment configuration */
     @Override
-    public void init() {
-        // Tech python = new Tech(Tech.Lang, "Python");
-        // Tech.builtInTech = ArrayUtils.add( Tech.builtInTech, python );
-    }
+    public void init() {}
 
     /**
      * Scan for Server Side Template Injection Vulnerabilities
@@ -244,13 +234,14 @@ public class SSTIScanner extends AbstractAppParamPlugin {
             alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         }
 
-        String referenceValue = randomStringFromAlphabet(alphabet, error_polyglots[0].length());
+        String referenceValue =
+                SSTIUtils.randomStringFromAlphabet(alphabet, error_polyglots[0].length());
         HttpMessage refMsg = getNewMsg();
         setParameter(refMsg, paramName, referenceValue);
         try {
             sendAndReceive(refMsg, false);
         } catch (IOException e) {
-            log.warn(
+            LOG.warn(
                     "SSTI vulnerability check failed for parameter ["
                             + paramName
                             + "] due to an I/O error",
@@ -354,11 +345,11 @@ public class SSTIScanner extends AbstractAppParamPlugin {
                 }
 
             } catch (SocketException ex) {
-                if (log.isDebugEnabled())
-                    log.debug("Caught " + ex.getClass().getName() + " " + ex.getMessage());
+                if (LOG.isDebugEnabled())
+                    LOG.debug("Caught " + ex.getClass().getName() + " " + ex.getMessage());
                 continue;
             } catch (IOException ex) {
-                log.warn(
+                LOG.warn(
                         "SSTI vulnerability check failed for parameter ["
                                 + paramName
                                 + "] and payload ["
@@ -388,10 +379,10 @@ public class SSTIScanner extends AbstractAppParamPlugin {
         String templateFixingPrefix;
 
         if (fixSyntax) {
-            codeFixPrefixes = ways_to_fix_code_syntax;
+            codeFixPrefixes = WAYS_TO_FIX_CODE_SYNTAX;
         }
 
-        for (TemplateFormat sstiPayload : template_formats) {
+        for (TemplateFormat sstiPayload : TEMPLATE_FORMATS) {
 
             if (fixSyntax) {
                 templateFixingPrefix = sstiPayload.getEndTag();
@@ -453,7 +444,7 @@ public class SSTIScanner extends AbstractAppParamPlugin {
 
                                 String attack =
                                         Constant.messages.getString(
-                                                MESSAGE_PREFIX + "alert",
+                                                MESSAGE_PREFIX + "alert.otherinfo",
                                                 sink.getLocation(),
                                                 output);
 
@@ -473,11 +464,11 @@ public class SSTIScanner extends AbstractAppParamPlugin {
                         }
                     }
                 } catch (SocketException ex) {
-                    if (log.isDebugEnabled())
-                        log.debug("Caught " + ex.getClass().getName() + " " + ex.getMessage());
+                    if (LOG.isDebugEnabled())
+                        LOG.debug("Caught " + ex.getClass().getName() + " " + ex.getMessage());
 
                 } catch (IOException ex) {
-                    log.warn(
+                    LOG.warn(
                             "SSTI vulnerability check failed for parameter ["
                                     + paramName
                                     + "]  due to an I/O error",
@@ -485,17 +476,5 @@ public class SSTIScanner extends AbstractAppParamPlugin {
                 }
             }
         }
-    }
-
-    /** from XXE plugin(yhawke) */
-    private String randomStringFromAlphabet(String alphabet, int length) {
-        SecureRandom rand = new SecureRandom();
-        StringBuilder result = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            result.append(alphabet.charAt(rand.nextInt(alphabet.length())));
-        }
-
-        return result.toString();
     }
 }

@@ -19,13 +19,17 @@
  */
 package org.zaproxy.zap.extension.sstiscanner;
 
-import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.httpclient.URIException;
 import org.apache.log4j.Logger;
 import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.network.HttpMessage;
-import org.zaproxy.zap.extension.api.ApiException;
 import org.zaproxy.zap.extension.callback.CallbackImplementor;
 import org.zaproxy.zap.extension.callback.ExtensionCallback;
 
@@ -36,10 +40,10 @@ public class SSTIChallengeCallbackApi implements CallbackImplementor {
     private static final int CHALLENGE_LENGTH = 6;
 
     // The default expiration time for each callback (in millisecs)
-    private static final long CALLBACK_EXPIRE_TIME = 2 * 60 * 1000;
+    private static final long CALLBACK_EXPIRE_TIME = TimeUnit.MINUTES.toMillis(2);
 
     // Internal logger
-    private static final Logger logger = Logger.getLogger(SSTIChallengeCallbackApi.class);
+    private static final Logger LOGGER = Logger.getLogger(SSTIChallengeCallbackApi.class);
 
     // The registered callbacks for this API
     // Use a synchronized collection
@@ -86,19 +90,10 @@ public class SSTIChallengeCallbackApi implements CallbackImplementor {
         }
     }
 
-    /**
-     * @param challenge
-     * @return
-     */
     public String getCallbackUrl(String challenge) {
         return getExtensionCallback().getCallbackAddress() + getPrefix() + "/" + challenge;
     }
 
-    /**
-     * @param msg
-     * @return
-     * @throws ApiException
-     */
     @Override
     public void handleCallBack(HttpMessage msg) {
         // We've to look at the name and verify if the challenge has
@@ -128,7 +123,7 @@ public class SSTIChallengeCallbackApi implements CallbackImplementor {
             }
 
         } catch (URIException e) {
-            logger.warn(e.getMessage(), e);
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
@@ -157,18 +152,7 @@ public class SSTIChallengeCallbackApi implements CallbackImplementor {
 
     private String randomString(int length) {
         String alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        return randomStringFromAlphabet(alphabet, length);
-    }
-
-    private String randomStringFromAlphabet(String alphabet, int length) {
-        SecureRandom rand = new SecureRandom();
-        StringBuilder result = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            result.append(alphabet.charAt(rand.nextInt(alphabet.length())));
-        }
-
-        return result.toString();
+        return SSTIUtils.randomStringFromAlphabet(alphabet, length);
     }
 
     public void registerCallback(

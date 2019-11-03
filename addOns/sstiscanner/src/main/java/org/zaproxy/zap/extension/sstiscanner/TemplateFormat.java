@@ -45,7 +45,7 @@ public class TemplateFormat {
     }
 
     public TemplateFormat(String startTag, String endTag) {
-        this(startTag, endTag, startTag + "%d*%d" + endTag);
+        this(startTag, endTag, startTag.replace("%", "%%") + "%d*%d" + endTag.replace("%", "%%"));
     }
 
     public String getStartTag() {
