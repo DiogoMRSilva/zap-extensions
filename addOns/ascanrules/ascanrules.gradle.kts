@@ -11,14 +11,21 @@ zapAddOn {
     manifest {
         author.set("ZAP Dev Team")
         url.set("https://www.zaproxy.org/docs/desktop/addons/active-scan-rules/")
+        dependencies {
+            addOns {
+                register("commonlib")
+            }
+        }
     }
 }
 
 dependencies {
     implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
     implementation("org.bitbucket.mstrobel:procyon-compilertools:0.5.36")
-
+    compile("com.googlecode.concurrent-trees", "concurrent-trees", "2.6.1")
+    compileOnly(parent!!.childProjects.get("commonlib")!!)
     testImplementation(project(":testutils"))
+    testImplementation(parent!!.childProjects.get("commonlib")!!)
 }
 
 spotless {
