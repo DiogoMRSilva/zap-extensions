@@ -25,6 +25,7 @@ import org.parosproxy.paros.core.scanner.AbstractAppParamPlugin;
 import org.parosproxy.paros.core.scanner.Alert;
 import org.parosproxy.paros.core.scanner.Category;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpRequestHeader;
 
 public class SinkDetectionCollectAndRefreshParamValues extends AbstractAppParamPlugin {
 
@@ -70,6 +71,10 @@ public class SinkDetectionCollectAndRefreshParamValues extends AbstractAppParamP
     public void scan() {
         // refresh the state of the website
         HttpMessage msg = getBaseMsg();
+        if (!msg.getRequestHeader().getMethod().equals(HttpRequestHeader.POST)
+                && !msg.getRequestHeader().getMethod().equals(HttpRequestHeader.PUT)) {
+            return;
+        }
         try {
             HttpMessage msg1 = msg.cloneRequest();
             sendAndReceive(msg1, false);
@@ -82,26 +87,22 @@ public class SinkDetectionCollectAndRefreshParamValues extends AbstractAppParamP
     @Override
     public void scan(HttpMessage msg, String param, String value) {
         // TODO: should collect params only on POST/PUT when low or medium strength?
-        if ((AlertThreshold.HIGH.equals(getAlertThreshold())
-                        || AttackStrength.LOW.equals(getAttackStrength())
-                        || AttackStrength.MEDIUM.equals(getAttackStrength()))
-                && isScanningOnPath(msg, param, value)) {
+        if ((!msg.getRequestHeader().getMethod().equals(HttpRequestHeader.POST)
+                        && !msg.getRequestHeader().getMethod().equals(HttpRequestHeader.PUT))
+                || isScanningOnURI(msg, param, value)) {
             return;
         }
 
-        if (value.length() > 0) {
+        if (value.length() > 3) {
             getStorage().addSeenValue(value);
         }
     }
 
-    private boolean isScanningOnPath(HttpMessage msg, String param, String value) {
+    private boolean isScanningOnURI(HttpMessage msg, String param, String value) {
         // TODO: Should also consider the host? if the value is contained in host
         //  it will also cause a lot of requests
-        String url = msg.getRequestHeader().getURI().getEscapedPath();
-        if (param.equals(value) && url.contains(value)) {
-            return true;
-        }
-        return false;
+        String uri = msg.getRequestHeader().getURI().getEscapedURI();
+        return uri.contains(value);
     }
 
     private SinkDetectionStorage getStorage() {

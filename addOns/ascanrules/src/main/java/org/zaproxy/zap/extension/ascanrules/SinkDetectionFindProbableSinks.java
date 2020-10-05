@@ -28,6 +28,7 @@ import org.parosproxy.paros.core.scanner.AbstractAppPlugin;
 import org.parosproxy.paros.core.scanner.Alert;
 import org.parosproxy.paros.core.scanner.Category;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpRequestHeader;
 
 public class SinkDetectionFindProbableSinks extends AbstractAppPlugin {
 
@@ -74,6 +75,9 @@ public class SinkDetectionFindProbableSinks extends AbstractAppPlugin {
     @Override
     public void scan() {
         HttpMessage msg = getBaseMsg();
+        if (!msg.getRequestHeader().getMethod().equals(HttpRequestHeader.GET)) {
+            return;
+        }
         try {
             HttpMessage msg1 = msg.cloneRequest();
             sendAndReceive(msg1, false);

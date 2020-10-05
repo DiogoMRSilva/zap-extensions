@@ -74,44 +74,4 @@ public class SinkDetectionVerifyProbableSinksUnitTest
 
         checkIfMsgHasDstMsgAsSink(srcMsg, dstMsg);
     }
-
-    @Test
-    public void shouldAddSinkWhenQueryParamIsReflected() throws HttpMalformedHeaderException {
-        this.scannerParam.setTargetParamsInjectable(ScannerParam.TARGET_QUERYSTRING);
-        String testInputLocation = "/sinksDetectionSaveQueryParameterInput";
-        this.nano.addHandler(new HandlerStoresQueryParamXxxx(testInputLocation, storedValue));
-        String testSinkLocation = "/sinksDetectionParameterSink";
-        this.nano.addHandler(new SinkLocationHandler(testSinkLocation, storedValue));
-
-        HttpMessage srcMsg = this.getHttpMessage(testInputLocation + "?xxxx=test");
-        HttpMessage dstMsg = this.getHttpMessage(testSinkLocation);
-
-        storage.addPossibleSinkForValue("test", dstMsg);
-        this.rule.setAlertThreshold(Plugin.AlertThreshold.LOW);
-        this.rule.setAttackStrength(Plugin.AttackStrength.LOW);
-        this.rule.init(srcMsg, this.parent);
-        this.rule.scan();
-
-        checkIfMsgHasDstMsgAsSink(srcMsg, dstMsg);
-    }
-
-    @Test
-    public void shouldAddSinkWhenPathParamIsReflected() throws HttpMalformedHeaderException {
-        this.scannerParam.setTargetParamsInjectable(ScannerParam.TARGET_URLPATH);
-        String testInputLocation = "/sinksDetectionSavePathParameterInput/";
-        this.nano.addHandler(new HandlerStoresPathParam(testInputLocation, storedValue));
-        String testSinkLocation = "/sinksDetectionParameterSink";
-        this.nano.addHandler(new SinkLocationHandler(testSinkLocation, storedValue));
-
-        HttpMessage srcMsg = this.getHttpMessage(testInputLocation + "xxxx/name");
-        HttpMessage dstMsg = this.getHttpMessage(testSinkLocation);
-
-        storage.addPossibleSinkForValue("xxxx", dstMsg);
-        this.rule.setAlertThreshold(Plugin.AlertThreshold.LOW);
-        this.rule.setAttackStrength(Plugin.AttackStrength.LOW);
-        this.rule.init(srcMsg, this.parent);
-        this.rule.scan();
-
-        checkIfMsgHasDstMsgAsSink(srcMsg, dstMsg);
-    }
 }

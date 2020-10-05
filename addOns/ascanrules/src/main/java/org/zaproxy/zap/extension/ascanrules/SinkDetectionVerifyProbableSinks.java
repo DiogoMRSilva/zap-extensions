@@ -29,6 +29,7 @@ import org.parosproxy.paros.core.scanner.AbstractAppParamPlugin;
 import org.parosproxy.paros.core.scanner.Alert;
 import org.parosproxy.paros.core.scanner.Category;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpRequestHeader;
 import org.zaproxy.addon.commonlib.ParamSinksUtils;
 
 public class SinkDetectionVerifyProbableSinks extends AbstractAppParamPlugin {
@@ -75,7 +76,10 @@ public class SinkDetectionVerifyProbableSinks extends AbstractAppParamPlugin {
 
     @Override
     public void scan(HttpMessage msg, String param, String value) {
-        // TODO: should test only on POST/PUT ?
+        if (!msg.getRequestHeader().getMethod().equals(HttpRequestHeader.POST)
+                && !msg.getRequestHeader().getMethod().equals(HttpRequestHeader.PUT)) {
+            return;
+        }
         SinkDetectionStorage storage = getStorage();
         List<HttpMessage> possibleSinks = storage.getPossibleSinksForValue(value);
 
