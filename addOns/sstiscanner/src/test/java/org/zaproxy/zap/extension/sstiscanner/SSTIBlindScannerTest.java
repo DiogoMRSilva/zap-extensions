@@ -19,10 +19,6 @@
  */
 package org.zaproxy.zap.extension.sstiscanner;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-
-import org.junit.Test;
 import org.parosproxy.paros.core.scanner.Plugin;
 import org.zaproxy.zap.testutils.ActiveScannerTestUtils;
 
@@ -39,45 +35,17 @@ public class SSTIBlindScannerTest extends ActiveScannerTestUtils<SSTIBlindScanne
         return new SSTIBlindScanner();
     }
 
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInMediumStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.MEDIUM;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-    }
-
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInHighStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.HIGH;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-    }
-
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInInsaneStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.INSANE;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
+    @Override
+    protected int getRecommendMaxNumberMessagesPerParam(Plugin.AttackStrength strength) {
+        int recommendMax = super.getRecommendMaxNumberMessagesPerParam(strength);
+        switch (strength) {
+            case LOW:
+                return recommendMax + 6;
+            case MEDIUM:
+            case HIGH:
+            case INSANE:
+            default:
+                return recommendMax;
+        }
     }
 }

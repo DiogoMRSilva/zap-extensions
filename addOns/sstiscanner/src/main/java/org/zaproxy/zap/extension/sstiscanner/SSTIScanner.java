@@ -31,7 +31,7 @@ import org.parosproxy.paros.core.scanner.Alert;
 import org.parosproxy.paros.core.scanner.Category;
 import org.parosproxy.paros.core.scanner.Plugin;
 import org.parosproxy.paros.network.HttpMessage;
-import org.zaproxy.zap.extension.ascanrules.PersistentXSSUtils;
+import org.zaproxy.zap.extension.ascanrules.PersistentXssUtils;
 
 /**
  * Active Plugin for Server Side Template Injection testing and verification.
@@ -281,10 +281,10 @@ public class SSTIScanner extends AbstractAppParamPlugin {
         inputPoint.addSinkPoint(
                 new ReflectedSinkPoint(originalMsg, originalValue, referenceMsg, referenceValue));
 
-        Set<Integer> sinks = PersistentXSSUtils.getSinksIdsForSource(originalMsg, paramName);
+        Set<Integer> sinks = PersistentXssUtils.getSinksIdsForSource(originalMsg, paramName);
         if (sinks != null) {
             for (int sinkMsgId : sinks) {
-                HttpMessage sinkMsg = PersistentXSSUtils.getMessage(sinkMsgId);
+                HttpMessage sinkMsg = PersistentXssUtils.getMessage(sinkMsgId);
                 if (sinkMsg == null) {
                     continue;
                 }
@@ -448,17 +448,14 @@ public class SSTIScanner extends AbstractAppParamPlugin {
                                                 sink.getLocation(),
                                                 output);
 
-                                this.bingo(
-                                        Alert.RISK_HIGH,
-                                        Alert.CONFIDENCE_HIGH,
-                                        getName(),
-                                        getDescription(),
-                                        newMsg.getRequestHeader().getURI().toString(),
-                                        paramName,
-                                        renderTest,
-                                        attack,
-                                        getSolution(),
-                                        newMsg);
+                                this.newAlert()
+                                        .setConfidence(Alert.CONFIDENCE_HIGH)
+                                        .setUri(newMsg.getRequestHeader().getURI().toString())
+                                        .setParam(paramName)
+                                        .setAttack(renderTest)
+                                        .setOtherInfo(attack)
+                                        .setMessage(newMsg)
+                                        .raise();
                                 found = true;
                             }
                         }

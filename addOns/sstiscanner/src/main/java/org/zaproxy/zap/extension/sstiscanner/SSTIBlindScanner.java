@@ -232,17 +232,13 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
                                     paramName,
                                     msg.getRequestHeader().getURI().toString());
 
-                    this.bingo(
-                            Alert.RISK_HIGH,
-                            Alert.CONFIDENCE_HIGH,
-                            getName(),
-                            getDescription(),
-                            msg.getRequestHeader().getURI().toString(),
-                            paramName,
-                            testOfSumSeconds,
-                            attack,
-                            getSolution(),
-                            msg);
+                    this.newAlert()
+                            .setConfidence(Alert.CONFIDENCE_HIGH)
+                            .setUri(msg.getRequestHeader().getURI().toString())
+                            .setParam(paramName)
+                            .setAttack(attack)
+                            .setMessage(msg)
+                            .raise();
                 }
             }
         } catch (SocketException ex) {
@@ -328,13 +324,15 @@ public class SSTIBlindScanner extends AbstractAppParamPlugin {
     }
 
     public void notifyCallback(HttpMessage attackMessage, String paramName, String payload) {
-        bingo(
-                Alert.RISK_HIGH,
-                Alert.CONFIDENCE_HIGH,
-                attackMessage.getRequestHeader().getURI().toString(),
-                paramName,
-                payload,
-                Constant.messages.getString(MESSAGE_PREFIX + "alert.recvdcallback.otherinfo"),
-                attackMessage);
+        this.newAlert()
+                .setConfidence(Alert.CONFIDENCE_HIGH)
+                .setUri(attackMessage.getRequestHeader().getURI().toString())
+                .setParam(paramName)
+                .setAttack(payload)
+                .setOtherInfo(
+                        Constant.messages.getString(
+                                MESSAGE_PREFIX + "alert.recvdcallback.otherinfo"))
+                .setMessage(attackMessage)
+                .raise();
     }
 }

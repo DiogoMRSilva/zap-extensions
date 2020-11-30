@@ -20,15 +20,18 @@
 package org.zaproxy.zap.extension.sstiscanner;
 
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 import fi.iki.elonen.NanoHTTPD.Response;
 import java.io.IOException;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.parosproxy.paros.core.scanner.Alert;
 import org.parosproxy.paros.core.scanner.Plugin;
 import org.parosproxy.paros.core.scanner.Plugin.AlertThreshold;
@@ -53,60 +56,21 @@ public class SSTIScannerTest extends ActiveScannerTestUtils<SSTIScanner> {
         return new SSTIScanner();
     }
 
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInLowStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.LOW;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-    }
-
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInMediumStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.MEDIUM;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength) + 2)));
-    }
-
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInHighStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.HIGH;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
-    }
-
-    @Test
-    public void shouldSendReasonableNumberOfMessagesInInsaneStrength() throws Exception {
-        // Given
-        Plugin.AttackStrength strength = Plugin.AttackStrength.INSANE;
-        rule.setAttackStrength(strength);
-        rule.init(getHttpMessage("?p=v"), parent);
-        // When
-        rule.scan();
-        // Then
-        assertThat(
-                httpMessagesSent,
-                hasSize(lessThanOrEqualTo(getRecommendMaxNumberMessagesPerParam(strength))));
+    @Override
+    protected int getRecommendMaxNumberMessagesPerParam(Plugin.AttackStrength strength) {
+        int recommendMax = super.getRecommendMaxNumberMessagesPerParam(strength);
+        switch (strength) {
+            case LOW:
+                return recommendMax;
+            case MEDIUM:
+                return recommendMax + 2;
+            case HIGH:
+                return recommendMax;
+            case INSANE:
+                return recommendMax;
+            default:
+                return recommendMax;
+        }
     }
 
     @Test
